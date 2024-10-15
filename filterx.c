@@ -603,8 +603,9 @@ u8i run_filterx(FILTERX *x){
 	
 			// output
 			if(pass){
+				int prev_tab = 0;
 				for(i=0;i<x->dats->size;i++){
-					if(i) fputc('\t', x->out);
+					if(i&&prev_tab) fputc('\t', x->out);
 					dat = ref_dsv(x->dats, i);
 					if(dat->select_idx < round){
 						if(dat->attr.fill){
@@ -616,18 +617,20 @@ u8i run_filterx(FILTERX *x){
 							
 						if(dat->attr.cuty < dat->attr.cutx) {
 							for(col=0;col<dat->ncol;col++){
-								if(col) fputc('\t', x->out);
+								if(col&&prev_tab) fputc('\t', x->out);
 								fprintf(x->out, "%s", get_cplist(fillstrs, col));
+								prev_tab = 1;
 								set_cplist(fillstrs, col, "-");
 							}
 						}
 						else {
 							col = 0;
 							for(j=(unsigned int)dat->attr.cutx;j<(unsigned int)dat->attr.cuty;j++){
-								if(col) fputc('\t', x->out);
+								if(col&&prev_tab) fputc('\t', x->out);
 								col = x->cuts->buffer[j];
 								if(col<= dat->ncol ){
 									fprintf(x->out, "%s", get_cplist(fillstrs, col - 1));
+									prev_tab = 1;
 								}
 							}
 								
@@ -635,19 +638,21 @@ u8i run_filterx(FILTERX *x){
 
 					} else if(dat->attr.cuty < dat->attr.cutx){
 						for(j=0;j<dat->in->tabs->size;j++){
-							if(j) fputc('\t', x->out);
+							if(j&&prev_tab) fputc('\t', x->out);
 							fprintf(x->out, "%s", get_col_str(dat->in, j));
+							prev_tab = 1;
 						}
 					} else {
 						col = 0;
 						for(j=(unsigned int)dat->attr.cutx;j<(unsigned int)dat->attr.cuty;j++){
-							if(col) fputc('\t', x->out);
+							if(col&&prev_tab) fputc('\t', x->out);
 							col = x->cuts->buffer[j];
 							if(col  > (int)dat->in->tabs->size){
 								fputc('-', x->out);
 							} else {
 								fprintf(x->out, "%s", get_col_str(dat->in, col - 1));
 							}
+							prev_tab = 1;
 						}
 					}
 				}
