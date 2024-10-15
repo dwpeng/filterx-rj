@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <ctype.h>
 #include <float.h>
 #include "string.h"
 #include "list.h"
@@ -32,6 +33,7 @@
 #define KEY_NUM_DSC	6
 #define KEY_ENUM_ASC	7
 #define KEY_ENUM_DSC	8
+#define KEY_PLACE_HOLDER	9
 
 static int enum_map_idx = 0;
 static int chr_enums_cnt = 63;
@@ -162,31 +164,55 @@ void parse_enums_filterx(FILTERX *x, char *par){
 	} while(tok);
 }
 
+static inline char* parse_col_index(char* p, int key, FILTERX *x){
+	u4i i;
+	if(p && *p){
+		p++;
+		if(*p){
+			if(*p == ':'){
+				p ++; // skip ':'
+				char* q = p;
+				while(*p&&isdigit(*p)) p++;
+				if(p == q){
+					fprintf(stderr, "Error in parsing column index\n"); exit(1);
+				}
+				char number_buffer[10] = { 0 };
+				strncpy(number_buffer, q, p - q);
+				number_buffer[p - q] = '\0';
+				i = atoi(number_buffer);
+				if(i > 0){
+					push_u4v(x->cols, i);
+				}
+				if(*p && *p == ',')p ++; // skip ','
+		  }else{
+			 	push_u4v(x->cols, x->cols->size + 1);
+		  }
+			push_u1v(x->keys, key);
+		}
+	}
+	return p;
+}
+
 void parse_keys_filterx(FILTERX *x, char *par){
 	char *p;
 	u4i i;
 	int key;
 	clear_u1v(x->keys);
+	clear_u4v(x->cols);
 	p = par;
 	while(*p){
 		key = 0;
 		switch(*p){
-			case 's': key = KEY_STR_ASC; break;
-			case 'S': key = KEY_STR_DSC; break;
-			case 'c': key = KEY_CSTR_ASC; break;
-			case 'C': key = KEY_CSTR_DSC; break;
-			case 'n': key = KEY_NUM_ASC; break;
-			case 'N': key = KEY_NUM_DSC; break;
-			case 'e': key = KEY_ENUM_ASC; break;
-			case 'E': key = KEY_ENUM_DSC; break;
+			case 's': {key = KEY_STR_ASC; p=parse_col_index(p, key, x); break;}
+			case 'S': {key = KEY_STR_DSC; p=parse_col_index(p, key, x); break;}
+			case 'c': {key = KEY_CSTR_ASC;p=parse_col_index(p, key, x); break;}
+			case 'C': {key = KEY_CSTR_DSC;p=parse_col_index(p, key, x); break;}
+			case 'n': {key = KEY_NUM_ASC; p=parse_col_index(p, key, x); break;}
+			case 'N': {key = KEY_NUM_DSC; p=parse_col_index(p, key, x); break;}
+			case 'e': {key = KEY_ENUM_ASC;p=parse_col_index(p, key, x); break;}
+			case 'E': {key = KEY_ENUM_DSC;p=parse_col_index(p, key, x); break;}
 			default: fprintf(stderr, "Unknown key type '%c', abort!\n", *p); exit(1);
 		}
-		push_u1v(x->keys, key);
-		p ++;
-	}
-	clear_u4v(x->cols);
-	for(i=0;i<x->keys->size;i++){
-		push_u4v(x->cols, i + 1);
 	}
 	for(i=0;i<=MAX_GROUP;i++){
 		x->grps[i].attr.colx = 0;
