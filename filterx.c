@@ -717,6 +717,7 @@ int usage(){
 	" -[1-9] <string>  Attributes for group 1..9, delimited by ':' \n"
 	"                  -1 for group 1 and -2..9 for group 2 to 9.\n"
 	"                  Group attributes may be count or freqency of the occurrence,output columns etc.Detail as follows.\n"
+	" -o     <string>  Output file name, default is stdout\n"
 	"\n"
 	"Attribute:\n"
 	"Group attributes and file attributes are provided for a flexible way to adjust the output according to user specified.\n"
@@ -758,12 +759,14 @@ int main(int argc, char **argv){
 	FILTERX *x;
 	int c;
 	x = init_filterx();
-	while((c = getopt(argc, argv, "hk:be:1:2:3:4:5:6:7:8:9:")) != -1){
+	int file = 0;
+	while((c = getopt(argc, argv, "hk:be:1:2:3:4:5:6:7:8:9:o:")) != -1){
 		switch(c){
 			case 'h': {usage();free_filterx(x);return 0;}
 			case 'k': parse_keys_filterx(x, optarg); break;
 			case 'b': builtin_enums_filterx(x); break;
 			case 'e': parse_enums_filterx(x, optarg); break;
+			case 'o': x->out = fopen(optarg, "w");file=1;break;
 			default:
 			if(c >= '1' && c <= '9'){
 				parse_group_filterx(x, c - '0', optarg);
@@ -776,5 +779,6 @@ int main(int argc, char **argv){
 	for(c=optind;c<argc;c++) parse_file_filterx(x, argv[c]);
 	run_filterx(x);
 	free_filterx(x);
+	if(file) fclose(x->out);
 	return 0;
 }
